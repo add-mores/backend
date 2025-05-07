@@ -1,105 +1,143 @@
-import re
 import os
+import re
 import pandas as pd
 from konlpy.tag import Okt
-from sqlalchemy import create_engine
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy import TEXT
+from sqlalchemy import create_engine, text
+from sqlalchemy.dialects.postgresql import TEXT, JSONB
 from dotenv import load_dotenv
 
-# 1) 환경 변수 로드 및 DB 연결
-load_dotenv()  # .env에서 DATABASE_URL을 로드
+# 1) 환경 변수 로드
+load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL이 설정되어 있지 않습니다.")
-engine = create_engine(DATABASE_URL, echo=True)
+    raise RuntimeError("DATABASE_URL이 설정되어 있지 않습니다")
 
-# 2) 형태소 분석기 초기화
-okt = Okt()
+# 2) DB 연결
+engine = create_engine(DATABASE_URL)
 
-# 3) 영어 약어 화이트리스트
-WHITELIST = {
-    "X-ray","CT","MRI","US","Ultrasound","PET","Endoscopy","Colonoscopy",
-    "ECG","EKG","EEG","BP","HR","CBC","BUN","Antibiotic","Rh","RhD",
-    "COVID19","BRCA","BRCA1","BRCA2","XY","DNA","ARC","Cramp","ABO",
-    "ASO","ATP","CA125","CA19-9","CEA","HawRiver","PSA","G스캐닝",
-    "ICL","LCP","MTX","X선","MERRF","N95","XXX","XYY","OTC","PP2",
-    "RS","VDT","WPW"
-}
+# 3) 이전 결과 테이블 제거
+with engine.begin() as conn:
+    conn.execute(text("DROP TABLE IF EXISTS testdis;"))
 
-# 4) 한글 예외 패턴: “형”, “항체”, “항”, “군” 포함 토큰은 무조건 보존
-EXC_PATTERN = re.compile(r".*(형|항체|항|군).*")
-
-# 5) 텍스트 클리닝 함수
-def clean(text: str) -> str:
-    text = re.sub(r"\([^가-힣]*[A-Za-z0-9][^)]*\)", " ", str(text))
-    text = text.replace("(", " ").replace(")", " ")
-    text = re.sub(r"[^가-힣A-Za-z0-9\s\-]", " ", text)
-    return re.sub(r"\s{2,}", " ", text).strip()
-
-# 6) 토큰화 함수
-def tokenize(text: str) -> list[str]:
-    try:
-        cleaned = clean(text)
-        morphs = okt.morphs(cleaned, stem=True)
-        tokens = []
-        for m in morphs:
-            if m in WHITELIST or EXC_PATTERN.match(m) or re.fullmatch(r"[가-힣]{2,}", m):
-                tokens.append(m)
-        return tokens
-    except Exception as e:
-        print(f"[Warning] tokenize 실패: {e!r} for text={text!r}")
-        return []
-
-# 7) Raw 테이블에서 필요한 컬럼 읽어오기 (테이블명: disease)
+# 4) 원본 데이터 읽기
 df_raw = pd.read_sql(
     """
     SELECT
       disnm_ko,
       disnm_en,
       dep,
-      "def"   AS definition,
+      "def"    AS definition,
       sym      AS symptoms,
       therapy
-    FROM disease
+    FROM disease;
     """,
     engine
 )
 
-# 8) 전처리 및 토큰화
-processed = []
+# 5) 형태소 분석기 초기화
+okt = Okt()
+
+# 6) 화이트리스트 (영문·숫자 조합 토큰도 여기에)
+WHITELIST = {
+    "X-ray","CT","MRI","US","Ultrasound","PET","Endoscopy","Colonoscopy",
+    "ECG","EKG","EEG","BP","HR","CBC","BUN","Antibiotic","Rh","RhD",
+    "COVID 19","BRCA","BRCA1","BRCA2","XY","DNA","ARC","Cramp","ABO",
+    "ASO","ATP","CA125","CA19-9","CEA","Haw River","PSA","G스캐닝",
+    "ICL","LCP","MTX","X선","MERRF","N95","XXX","XYY","OTC","PP2","RS",
+    "VDT","WPW",
+    "18번"
+}
+
+# 7) “형, 유형, 항체, 항, 군” 등의 예외 패턴
+EXC_FULL = re.compile(
+    r"\b[\w가-힣]*(?:형|유형|항체|항|군)\b"
+)
+
+# 8) 텍스트 클리닝 함수
+def clean_text(txt: str) -> str:
+    if not isinstance(txt, str):
+        return ""
+    # 괄호 안 영어·숫자 제거
+    txt = re.sub(r"\([^가-힣]*\)", "", txt)
+    # ml, %, 단독 숫자 제거 (한글과 붙은 경우는 보존)
+    txt = re.sub(r"(?i)\b\d+ml?%?\b", "", txt)
+    txt = re.sub(r"\b\d+\b", "", txt)
+    # 특수문자 제거
+    txt = re.sub(r"[^\w가-힣\s]", " ", txt)
+    # 연속 공백 → 단일
+    return re.sub(r"\s+", " ", txt).strip()
+
+# 9) 한글 명사 토큰 유효성 검사
+def is_valid_token(tok: str) -> bool:
+    # 화이트리스트 우선
+    if tok in WHITELIST:
+        return True
+    # 온전히 한글로만 된 토큰
+    return bool(re.fullmatch(r"[가-힣]+", tok))
+
+# 10) 전처리 + 토큰화
+records = []
 for _, row in df_raw.iterrows():
-    parts = [row.definition, row.symptoms, row.therapy]
-    text_block = " ".join(filter(None, parts))
-    toks = tokenize(text_block) or []
-    processed.append({
-        "name_ko":    row.disnm_ko,
-        "name_en":    row.disnm_en,
-        "department": row.dep,
+    definition = clean_text(row["definition"])
+    symptoms   = clean_text(row["symptoms"])
+    combined   = f"{definition} {symptoms}"
+
+    # 10.1) 화이트리스트 토큰 먼저 추출
+    wl = []
+    for w in combined.split():
+        if w in WHITELIST and w not in wl:
+            wl.append(w)
+
+    # 10.2) 예외 패턴 토큰 추출
+    excs = EXC_FULL.findall(combined)
+    excs = [e.strip() for e in excs if e.strip()]
+
+    # 10.3) 형태소 분석을 위한 텍스트에서 WL·EXC 제거
+    temp = combined
+    for w in wl + excs:
+        # 단어 경계로 제거
+        temp = re.sub(rf"\b{re.escape(w)}\b", " ", temp)
+    temp = re.sub(r"\s+", " ", temp)
+
+    # 10.4) Okt로 명사만 추출
+    nouns = okt.nouns(temp)
+
+    # 10.5) 최종 토큰 순서대로 중복 없이 합치기
+    toks = []
+    for w in wl + excs + nouns:
+        if w and w not in toks and is_valid_token(w):
+            toks.append(w)
+
+    records.append({
+        "disnm_ko":   row["disnm_ko"],
+        "disnm_en":   row["disnm_en"],
+        "dep":        row["dep"],
+        "definition": definition,
+        "symptoms":   row["symptoms"],
+        "therapy":    row["therapy"],
         "tokens":     toks,
         "doc":        " ".join(toks)
     })
 
-proc_df = pd.DataFrame(processed)
+# 11) 중복(doc) 제거
+df_proc = pd.DataFrame(records).drop_duplicates(subset=["disnm_ko", "doc"])
 
-# 9) 결과를 testdis 테이블에 저장 (append 모드, SERIAL PK 유지)
-proc_df.to_sql(
+# 12) 결과를 testdis 테이블로 적재
+df_proc.to_sql(
     "testdis",
-    con=engine,
-    if_exists="append",
+    engine,
+    if_exists="replace",
     index=False,
     dtype={
-        "name_ko":    TEXT,
-        "name_en":    TEXT,
-        "department": TEXT,
+        "disnm_ko":   TEXT,
+        "disnm_en":   TEXT,
+        "dep":        TEXT,
+        "definition": TEXT,
+        "symptoms":   JSONB,
+        "therapy":    TEXT,
         "tokens":     JSONB,
         "doc":        TEXT
     }
 )
 
-print("✅ testdis 테이블에 전처리 결과 적재 완료")
-
-
-
-
-
+print("✅ testdis 테이블이 성공적으로 생성되었습니다.")
