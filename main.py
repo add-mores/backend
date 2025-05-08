@@ -69,7 +69,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown(
         """
-        <a href='/질병_추천' target='_self' style='text-decoration: none;'>
+        <a href='/disease' target='_self' style='text-decoration: none;'>
             <div class='card'>
                 <h3>🔍 질병 추천</h3>
                 <p>증상을 기반으로 유사한 질병을 추천합니다.</p>
