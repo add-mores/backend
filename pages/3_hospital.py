@@ -34,7 +34,7 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * 2 * atan2(sqrt(a), sqrt(1 - a))
 
 # 📌 병원 데이터 불러오기
-df = pd.read_csv("pages/hospital_with_latlon.csv")
+df = pd.read_csv("pages/hospital_with_latlon.csv") # https://drive.google.com/drive/u/0/folders/12uXaywsmPBeu0neCgr-oxKN_noUau4jZ?hl=ko
 
 # 📌 Streamlit 설정 및 iframe 높이 고정
 st.set_page_config(page_title="병원 지도 서비스", layout="wide")
