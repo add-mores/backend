@@ -44,13 +44,13 @@ WHITELIST = {
     "COVID 19","BRCA","BRCA1","BRCA2","XY","DNA","ARC","Cramp","ABO",
     "ASO","ATP","CA125","CA19-9","CEA","Haw River","PSA","G스캐닝",
     "ICL","LCP","MTX","X선","MERRF","N95","XXX","XYY","OTC","PP2","RS",
-    "VDT","WPW",
+    "VDT","WPW","A형","B형","O형","C형","D형","G형",
     "18번"
 }
 
 # 7) “형, 유형, 항체, 항, 군” 등의 예외 패턴
 EXC_FULL = re.compile(
-    r"\b[\w가-힣]*(?:형|유형|항체|항|군)\b"
+    r"\b[\w가-힣]*(?:유형|항체|형|항|군)\b"
 )
 
 # 8) 텍스트 클리닝 함수
