@@ -5,7 +5,7 @@
 groups = ["default", "streamlit"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:12e4fc4fa9f3a5c0874add80a642fc8bdc3d58ed17ca1b286e816052869ebd76"
+content_hash = "sha256:590724499b80ff311752f4bf0a44dc3e5d7c3f3a2bb4145dc34128633441b78e"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -15,7 +15,7 @@ name = "altair"
 version = "5.5.0"
 requires_python = ">=3.9"
 summary = "Vega-Altair: A declarative statistical visualization library for Python."
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 dependencies = [
     "jinja2",
     "jsonschema>=3.0",
@@ -210,7 +210,7 @@ name = "blinker"
 version = "1.9.0"
 requires_python = ">=3.9"
 summary = "Fast, simple object-to-object and broadcast signaling"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 files = [
     {file = "blinker-1.9.0-py3-none-any.whl", hash = "sha256:ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc"},
     {file = "blinker-1.9.0.tar.gz", hash = "sha256:b4ce2265a7abece45e7cc896e98dbebe6cead56bcf805a3d23136d145f5445bf"},
@@ -235,7 +235,7 @@ name = "cachetools"
 version = "5.5.2"
 requires_python = ">=3.7"
 summary = "Extensible memoizing collections and decorators"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 files = [
     {file = "cachetools-5.5.2-py3-none-any.whl", hash = "sha256:d26a22bcc62eb95c3beabd9f1ee5e820d3d2704fe2967cbe350e20c8ffcd3f0a"},
     {file = "cachetools-5.5.2.tar.gz", hash = "sha256:1a661caa9175d26759571b2e19580f9d6393969e5dfca11fdb1f947a23e640d4"},
@@ -329,7 +329,7 @@ name = "click"
 version = "8.1.8"
 requires_python = ">=3.7"
 summary = "Composable command line interface toolkit"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 dependencies = [
     "colorama; platform_system == \"Windows\"",
     "importlib-metadata; python_version < \"3.8\"",
@@ -483,7 +483,7 @@ name = "gitdb"
 version = "4.0.12"
 requires_python = ">=3.7"
 summary = "Git Object Database"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 dependencies = [
     "smmap<6,>=3.0.1",
 ]
@@ -497,7 +497,7 @@ name = "gitpython"
 version = "3.1.44"
 requires_python = ">=3.7"
 summary = "GitPython is a Python library used to interact with Git repositories"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 dependencies = [
     "gitdb<5,>=4.0.1",
     "typing-extensions>=3.7.4.3; python_version < \"3.8\"",
@@ -1128,7 +1128,7 @@ name = "narwhals"
 version = "1.37.1"
 requires_python = ">=3.8"
 summary = "Extremely lightweight compatibility layer between dataframe libraries"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 files = [
     {file = "narwhals-1.37.1-py3-none-any.whl", hash = "sha256:6f358a23b7351897d6efb45496dc0528918ce4ca6c8f9631594885cd873576a7"},
     {file = "narwhals-1.37.1.tar.gz", hash = "sha256:1eb8f17ff00e6c471d5afb704e9068f41657234eb73bde2ee66ad975a170015b"},
@@ -1365,7 +1365,7 @@ name = "pillow"
 version = "11.2.1"
 requires_python = ">=3.9"
 summary = "Python Imaging Library (Fork)"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 files = [
     {file = "pillow-11.2.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:78afba22027b4accef10dbd5eed84425930ba41b3ea0a86fa8d20baaf19d807f"},
     {file = "pillow-11.2.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:78092232a4ab376a35d68c4e6d5e00dfd73454bd12b230420025fbe178ee3b0b"},
@@ -1455,7 +1455,7 @@ name = "protobuf"
 version = "6.30.2"
 requires_python = ">=3.9"
 summary = ""
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 files = [
     {file = "protobuf-6.30.2-cp310-abi3-win32.whl", hash = "sha256:b12ef7df7b9329886e66404bef5e9ce6a26b54069d7f7436a0853ccdeb91c103"},
     {file = "protobuf-6.30.2-cp310-abi3-win_amd64.whl", hash = "sha256:7653c99774f73fe6b9301b87da52af0e69783a2e371e8b599b3e9cb4da4b12b9"},
@@ -1538,7 +1538,7 @@ name = "pyarrow"
 version = "20.0.0"
 requires_python = ">=3.9"
 summary = "Python library for Apache Arrow"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 files = [
     {file = "pyarrow-20.0.0-cp312-cp312-macosx_12_0_arm64.whl", hash = "sha256:75a51a5b0eef32727a247707d4755322cb970be7e935172b6a3a9f9ae98404ba"},
     {file = "pyarrow-20.0.0-cp312-cp312-macosx_12_0_x86_64.whl", hash = "sha256:211d5e84cecc640c7a3ab900f930aaff5cd2702177e0d562d426fb7c4f737781"},
@@ -1586,7 +1586,7 @@ name = "pydeck"
 version = "0.9.1"
 requires_python = ">=3.8"
 summary = "Widget for deck.gl maps"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 dependencies = [
     "jinja2>=2.10.1",
     "numpy>=1.16.4",
@@ -2013,7 +2013,7 @@ name = "smmap"
 version = "5.0.2"
 requires_python = ">=3.7"
 summary = "A pure Python implementation of a sliding window memory map manager"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 files = [
     {file = "smmap-5.0.2-py3-none-any.whl", hash = "sha256:b30115f0def7d7531d22a0fb6502488d879e75b260a9db4d0819cfb25403af5e"},
     {file = "smmap-5.0.2.tar.gz", hash = "sha256:26ea65a03958fa0c8a1c7e8c7a58fdc77221b8910f6be2131affade476898ad5"},
@@ -2093,7 +2093,7 @@ name = "streamlit"
 version = "1.45.0"
 requires_python = "!=3.9.7,>=3.9"
 summary = "A faster way to build and share data apps"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 dependencies = [
     "altair<6,>=4.0",
     "blinker<2,>=1.5.0",
@@ -2120,11 +2120,28 @@ files = [
 ]
 
 [[package]]
+name = "streamlit-folium"
+version = "0.25.0"
+requires_python = ">=3.9"
+summary = "Render Folium objects in Streamlit"
+groups = ["default"]
+dependencies = [
+    "branca",
+    "folium!=0.15.0,>=0.13",
+    "jinja2",
+    "streamlit>=1.35.0",
+]
+files = [
+    {file = "streamlit_folium-0.25.0-py3-none-any.whl", hash = "sha256:48d5f05ea3e9005c00c0b2fe5a9a3086df30d04e1a20c3630a6c9df183ec590a"},
+    {file = "streamlit_folium-0.25.0.tar.gz", hash = "sha256:f32eb51c1958705030e15045a38edaf9c046d6de5e6587e64190251466a4a006"},
+]
+
+[[package]]
 name = "tenacity"
 version = "9.1.2"
 requires_python = ">=3.9"
 summary = "Retry code until it succeeds"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 files = [
     {file = "tenacity-9.1.2-py3-none-any.whl", hash = "sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138"},
     {file = "tenacity-9.1.2.tar.gz", hash = "sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb"},
@@ -2165,7 +2182,7 @@ name = "toml"
 version = "0.10.2"
 requires_python = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 summary = "Python Library for Tom's Obvious, Minimal Language"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 files = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
     {file = "toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"},
@@ -2262,7 +2279,7 @@ name = "watchdog"
 version = "6.0.0"
 requires_python = ">=3.9"
 summary = "Filesystem events monitoring"
-groups = ["streamlit"]
+groups = ["default", "streamlit"]
 marker = "platform_system != \"Darwin\""
 files = [
     {file = "watchdog-6.0.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:bdd4e6f14b8b18c334febb9c4425a878a2ac20efd1e0b231978e7b150f92a948"},
