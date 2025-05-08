@@ -5,7 +5,7 @@ description = "Default template for PDM package"
 authors = [
     {name = "jiwon1118", email = "b23386585@gmail.com"},
 ]
-dependencies = ["pandas>=2.2.3", "requests>=2.32.3", "python-dotenv>=1.1.0", "psycopg>=3.2.7", "jupyterlab>=4.4.1", "pytest>=8.3.5", "folium>=0.19.5", "geopandas>=1.0.1", "psycopg2>=2.9.10"]
+dependencies = ["pandas>=2.2.3", "requests>=2.32.3", "python-dotenv>=1.1.0", "psycopg>=3.2.7", "jupyterlab>=4.4.1", "pytest>=8.3.5", "folium>=0.19.5", "geopandas>=1.0.1", "psycopg2>=2.9.10", "konlpy>=0.6.0", "sqlalchemy>=2.0.40"]
 requires-python = ">=3.12"
 readme = "README.md"
 license = {text = "MIT"}
