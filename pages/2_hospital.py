@@ -9,17 +9,13 @@ from math import radians, sin, cos, sqrt, atan2
 from dotenv import load_dotenv
 import os
 
-# ─────────────────────────────
-# 환경 설정 및 데이터 불러오기
-# ─────────────────────────────
+# ─────────────── 환경 설정 및 데이터 ───────────────
 load_dotenv()
 KAKAO_API_KEY = os.getenv("KAKAO_API_KEY")
 headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
 df = pd.read_csv("pages/hospital_with_latlon.csv")
 
-# ─────────────────────────────
-# 유틸 함수
-# ─────────────────────────────
+# ─────────────── 유틸 함수 ───────────────
 def get_lat_lon(address):
     url = "https://dapi.kakao.com/v2/local/search/address.json"
     params = {"query": address}
@@ -44,12 +40,9 @@ def match_exact_departments(treatment, selected_depts):
     dept_list = [s.strip() for s in treatment.split(",")]
     return any(dept in dept_list for dept in selected_depts)
 
-# ─────────────────────────────
-# 지도 및 리스트 출력 함수
-# ─────────────────────────────
+# ─────────────── 지도 및 병원 리스트 출력 ───────────────
 def show_map_and_list(center, radius, df_filtered):
     center_lat, center_lon = center
-
     df_filtered["distance"] = df_filtered.apply(
         lambda row: haversine(center_lat, center_lon, row["lat"], row["lon"]), axis=1
     )
@@ -95,9 +88,7 @@ def show_map_and_list(center, radius, df_filtered):
             st.markdown(f"- 거리: {row['distance']:.2f} km")
             st.markdown("---")
 
-# ─────────────────────────────
-# 주소 입력 처리
-# ─────────────────────────────
+# ─────────────── 주소 입력 처리 ───────────────
 def render_address_input(df_filtered, radius):
     address = st.text_input("도로명 주소 입력", "서울특별시 광진구 능동로 120")
     if address:
@@ -107,35 +98,50 @@ def render_address_input(df_filtered, radius):
         else:
             st.warning("❌ 주소를 찾을 수 없습니다.")
 
-# ─────────────────────────────
-# GPS 위치 처리 + 재요청
-# ─────────────────────────────
+# ─────────────── GPS 위치 처리 + 상태 전환 ───────────────
 def render_gps_location(df_filtered, radius):
     if "gps_location" not in st.session_state:
         with st.spinner("📡 위치 정보를 가져오는 중입니다..."):
             st.session_state["gps_location"] = get_geolocation()
 
     location = st.session_state.get("gps_location")
-    oords = location.get("coords") if location else None
+    coords = location.get("coords") if location else None
 
     if coords and coords.get("latitude") and coords.get("longitude"):
         lat = coords["latitude"]
         lon = coords["longitude"]
         acc = coords.get("accuracy", 9999)
 
-        if acc > 1000:
-            st.warning(f"⚠️ 현재 위치 정확도가 낮습니다. (±{int(acc)}m)")
+        st.info(f"📍 현재 위치 정확도: ±{int(acc)}m")
 
-        show_map_and_list((lat, lon), radius, df_filtered)
+        if acc <= 1500:
+            show_map_and_list((lat, lon), radius, df_filtered)
+        else:
+            st.warning("⚠️ 위치 정확도가 낮습니다.")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("🔄 위치 다시 요청"):
+                    with st.spinner("📡 재요청 중..."):
+                        st.session_state["gps_location"] = get_geolocation()
+                        st.experimental_rerun()
+            with col2:
+                if st.button("📍 주소로 전환"):
+                    st.session_state["location_method"] = "주소 입력"
+                    st.experimental_rerun()
     else:
-        st.warning("⚠️ 위치 권한을 허용해주세요.")
-        if st.button("🔄 위치 다시 요청"):
-            with st.spinner("📡 위치 재요청 중..."):
-                st.session_state["gps_location"] = get_geolocation()
+        st.warning("⚠️ 위치 정보를 가져올 수 없습니다.")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔄 위치 다시 요청"):
+                with st.spinner("📡 재요청 중..."):
+                    st.session_state["gps_location"] = get_geolocation()
+                    st.experimental_rerun()
+        with col2:
+            if st.button("📍 주소로 전환"):
+                st.session_state["location_method"] = "주소 입력"
+                st.experimental_rerun()
 
-# ─────────────────────────────
-# Streamlit UI
-# ─────────────────────────────
+# ─────────────── Streamlit 본문 ───────────────
 st.set_page_config(page_title="병원 지도 서비스", layout="wide")
 st.title("🏥 병원 위치 시각화 서비스")
 
@@ -151,8 +157,11 @@ df_filtered = df.copy()
 if selected_depts:
     df_filtered = df_filtered[df_filtered["treatment"].apply(lambda t: match_exact_departments(t, selected_depts))]
 
-# 위치 입력 방식
-method = st.radio("📍 위치 입력 방식", ["주소 입력", "현재 위치(GPS)"], horizontal=True)
+# 라디오 버튼은 최초 한 번만 실행
+if "location_method" not in st.session_state:
+    st.session_state["location_method"] = st.radio("📍 위치 입력 방식", ["주소 입력", "현재 위치(GPS)"], horizontal=True)
+
+method = st.session_state["location_method"]
 
 if method == "주소 입력":
     render_address_input(df_filtered, radius)
