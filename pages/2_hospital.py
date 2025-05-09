@@ -54,6 +54,7 @@ def show_map_and_list(radius, df_filtered):
     df_nearby = df_filtered[df_filtered["distance"] <= radius].sort_values("distance").reset_index(drop=True)
 
     m = folium.Map(location=focused, zoom_start=17)
+    m.add_child(folium.LatLngPopup())
     cluster = MarkerCluster().add_to(m)
 
     folium.Marker(
@@ -79,20 +80,29 @@ def show_map_and_list(radius, df_filtered):
 
     map_col, list_col = st.columns([3, 2])
     with map_col:
-        st_folium(m, width=700, height=600)
+        map_data = st_folium(m, width=700, height=500, returned_objects=["last_clicked"])
 
-        naver_url = f"https://map.naver.com/v5/search/{focused[0]},{focused[1]}"
-        kakao_url = f"https://map.kakao.com/link/map/지도중심,{focused[0]},{focused[1]}"
-        google_url = f"https://www.google.com/maps/search/?api=1&query={focused[0]},{focused[1]}"
+        # 지도 클릭 시 좌표 및 링크 표시
+        if map_data and map_data.get("last_clicked"):
+            lat = map_data["last_clicked"]["lat"]
+            lon = map_data["last_clicked"]["lng"]
+            st.success(f"📍 선택한 좌표: 위도 {lat:.6f}, 경도 {lon:.6f}")
+            st.markdown(
+                f"[네이버](https://map.naver.com/v5/search/{lat},{lon}) | "
+                f"[카카오](https://map.kakao.com/link/map/선택위치,{lat},{lon}) | "
+                f"[구글](https://www.google.com/maps/search/?api=1&query={lat},{lon})",
+                unsafe_allow_html=True
+            )
 
+        # 주소/위치 중심 기준 지도 링크
+        lat, lon = focused
         st.markdown(f"""
-            <div style="font-size:14px; margin-top:10px; color: gray;">
-                🧭 지도 중심 좌표: <strong>{focused[0]:.5f}, {focused[1]:.5f}</strong><br>
-                🔗 외부 지도에서 보기:
-                <a href="{naver_url}" target="_blank">네이버지도</a> |
-                <a href="{kakao_url}" target="_blank">카카오맵</a> |
-                <a href="{google_url}" target="_blank">구글지도</a>
-            </div>
+        <div style="font-size:13px; margin-top:10px; color: gray;">
+        🧭 중심 좌표: <strong>{lat:.5f}, {lon:.5f}</strong><br>
+        <a href="https://map.naver.com/v5/search/{lat},{lon}" target="_blank">네이버</a> |
+        <a href="https://map.kakao.com/link/map/지도중심,{lat},{lon}" target="_blank">카카오</a> |
+        <a href="https://www.google.com/maps/search/?api=1&query={lat},{lon}" target="_blank">구글</a>
+        </div>
         """, unsafe_allow_html=True)
 
     with list_col:
@@ -132,6 +142,14 @@ def render_address_input(df_filtered, radius):
             st.success(f"📌 주소 좌표: {center}")
             st.session_state["focused_location"] = center
             show_map_and_list(radius, df_filtered)
+
+            lat, lon = center
+            st.markdown(f"""
+            🔗 외부 지도 링크: 
+            [네이버](https://map.naver.com/v5/search/{lat},{lon}) | 
+            [카카오](https://map.kakao.com/link/map/주소입력,{lat},{lon}) | 
+            [구글](https://www.google.com/maps/search/?api=1&query={lat},{lon})
+            """, unsafe_allow_html=True)
         else:
             st.warning("❌ 주소를 찾을 수 없습니다.")
 
