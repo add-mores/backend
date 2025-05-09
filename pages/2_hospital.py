@@ -102,10 +102,7 @@ def show_map_and_list(radius, df_filtered):
             st.info("❌ 조건에 맞는 병원이 없습니다.")
             return
 
-        if "visible_count" not in st.session_state:
-            st.session_state.visible_count = 3
-
-        visible = st.session_state.visible_count
+        visible = st.session_state.get("visible_count", 3)
         total = len(df_nearby)
         hospitals_to_show = df_nearby.iloc[:visible]
 
@@ -123,7 +120,7 @@ def show_map_and_list(radius, df_filtered):
 
         if visible < total:
             if st.button("📄 병원 더보기"):
-                st.session_state.visible_count += 3
+                st.session_state["visible_count"] = visible + 3
                 st.rerun()
 
 # ───────────────────── 주소 입력 처리 ─────────────────────
@@ -134,7 +131,6 @@ def render_address_input(df_filtered, radius):
         if center:
             st.success(f"📌 주소 좌표: {center}")
             st.session_state["focused_location"] = center
-            st.session_state["visible_count"] = 3
             show_map_and_list(radius, df_filtered)
         else:
             st.warning("❌ 주소를 찾을 수 없습니다.")
@@ -157,7 +153,6 @@ def render_gps_location(df_filtered, radius):
         st.info(f"정확도: ±{int(acc)}m")
         if acc <= 100:
             st.session_state["focused_location"] = (lat, lon)
-            st.session_state["visible_count"] = 3
             show_map_and_list(radius, df_filtered)
         else:
             st.warning("⚠️ 정확도가 낮습니다. 주소 입력을 권장합니다.")
@@ -179,6 +174,8 @@ if "location_method" not in st.session_state:
     st.session_state["location_method"] = "현재 위치(GPS)"
 if "focused_location" not in st.session_state:
     st.session_state["focused_location"] = (37.5665, 126.9780)
+if "visible_count" not in st.session_state:
+    st.session_state["visible_count"] = 3
 
 ui_method = st.radio("위치 입력 방식", ["현재 위치(GPS)", "주소 입력"],
                      index=0 if st.session_state["location_method"] == "현재 위치(GPS)" else 1,
