@@ -5,7 +5,7 @@
 groups = ["default", "streamlit"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:590724499b80ff311752f4bf0a44dc3e5d7c3f3a2bb4145dc34128633441b78e"
+content_hash = "sha256:02352b04f53c1dbe1198b909eeed87b145057ab673fd1cd68d183a0419a56e60"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
@@ -2134,6 +2134,20 @@ dependencies = [
 files = [
     {file = "streamlit_folium-0.25.0-py3-none-any.whl", hash = "sha256:48d5f05ea3e9005c00c0b2fe5a9a3086df30d04e1a20c3630a6c9df183ec590a"},
     {file = "streamlit_folium-0.25.0.tar.gz", hash = "sha256:f32eb51c1958705030e15045a38edaf9c046d6de5e6587e64190251466a4a006"},
+]
+
+[[package]]
+name = "streamlit-js-eval"
+version = "0.1.7"
+requires_python = ">=3.8"
+summary = "A custom Streamlit component to evaluate arbitrary Javascript expressions."
+groups = ["default"]
+dependencies = [
+    "streamlit>=1.0.0",
+]
+files = [
+    {file = "streamlit_js_eval-0.1.7-py3-none-any.whl", hash = "sha256:c99c23d1c6e2a27fd45794262e2ac07befaef9603a86e4e325a9e980cad8c78d"},
+    {file = "streamlit_js_eval-0.1.7.tar.gz", hash = "sha256:af80eff45e2f23a676588578aff7d2790080360528c656f4a4476c1484574c97"},
 ]
 
 [[package]]
