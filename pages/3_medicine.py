@@ -3,6 +3,8 @@ import streamlit as st
 import pandas as pd
 from konlpy.tag import Okt
 
+st.set_page_config(page_title="의약품 추천", layout="wide")
+
 # 형태소 분석기
 okt = Okt()
 
