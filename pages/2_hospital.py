@@ -62,11 +62,15 @@ df["treatment"].dropna().apply(lambda t: all_departments.update([s.strip() for s
 departments = sorted(list(all_departments))
 selected_depts = st.multiselect("필터링할 진료과를 선택하세요", departments)
 
-df_filtered = df.copy()
-if selected_depts:
-    df_filtered = df[df["treatment"].apply(
-        lambda t: any(dept in t for dept in selected_depts) if pd.notna(t) else False
-    )]
+# ✅ 완전 일치 기반 필터링
+def match_exact_departments(treatment, selected_depts):
+    if pd.isna(treatment):
+        return False
+    dept_list = [s.strip() for s in treatment.split(",")]
+    return any(dept in dept_list for dept in selected_depts)
+
+df_filtered = df[df["treatment"].apply(lambda t: match_exact_departments(t, selected_depts))]
+
 
 # 📌 주소 입력
 address = st.text_input("도로명 주소를 입력하세요", value="서울특별시 광진구 능동로 120")
