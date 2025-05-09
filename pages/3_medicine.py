@@ -23,6 +23,7 @@ def extract_nouns(text):
 def recommend_with_weights(user_input, df, top_n=5):
     user_nouns = set(extract_nouns(user_input))
     user_noun_count = len(user_nouns)
+    # 약물 복용 시 부작용 가능성이 높은 고위험군이나 장기 기능 저하 상태를 나타내는 키워드로, 해당 내용이 없을수록 대부분의 사람이 안전하게 복용할 수 있음
     RISK_KEYWORDS = ['과민증', '어린이', '고령자', '간장애', '신장애', '임산부', '수유부', '간질환', '신부전']
 
     if user_noun_count == 0:
