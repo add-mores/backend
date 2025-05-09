@@ -116,9 +116,7 @@ def render_gps_location(df_filtered, radius):
             st.session_state["gps_location"] = get_geolocation()
 
     location = st.session_state.get("gps_location")
-    coords = location.get("coords") if location else None
-
-    st.write("📌 location 반환값:", location)  # 디버깅용
+    oords = location.get("coords") if location else None
 
     if coords and coords.get("latitude") and coords.get("longitude"):
         lat = coords["latitude"]
