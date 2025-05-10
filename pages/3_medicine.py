@@ -4,6 +4,8 @@ import os
 import psycopg2
 from dotenv import load_dotenv
 from konlpy.tag import Okt
+import math
+from collections import Counter
 
 # 환경 변수 로드
 load_dotenv()
@@ -46,6 +48,23 @@ def load_data():
     finally:
         conn.close()
 
+# efcy_nouns 컬럼에서 IDF 점수 계산
+def compute_idf_scores(df):
+    doc_count = len(df)
+    noun_doc_freq = Counter()
+
+    for entry in df['efcy_nouns'].dropna():
+        nouns = set(n.strip() for n in entry.split(',') if n.strip())
+        for noun in nouns:
+            noun_doc_freq[noun] += 1
+
+    idf_scores = {
+        noun: math.log(doc_count / (1 + freq))  # 1을 더해 0 division 방지
+        for noun, freq in noun_doc_freq.items()
+    }
+
+    return idf_scores
+
 # 추천 함수 (10점 만점 기반 가중치 적용 + 사용자 조건 필터링)
 def recommend_with_weights(user_input, df, age_group=None, is_pregnant=False, has_disease=None, top_n=5):
     user_nouns = set(extract_nouns(user_input))
@@ -59,6 +78,8 @@ def recommend_with_weights(user_input, df, age_group=None, is_pregnant=False, ha
         ])
 
     df = df.fillna("")
+    # IDF 점수 계산
+    idf_scores = compute_idf_scores(df)
 
     # 사용자 조건 필터링 함수
     def exclude_by_user_conditions(row):
@@ -91,11 +112,14 @@ def recommend_with_weights(user_input, df, age_group=None, is_pregnant=False, ha
     
     df = df[df.apply(exclude_by_user_conditions, axis=1)]
 
-    # 점수 계산 함수들
+    # IDF 기반 점수 계산
     def symptom_score(efcy_nouns):
-        med_nouns = set(efcy_nouns.split(","))
-        overlap = len(user_nouns & med_nouns)
-        return (overlap / user_noun_count) * 6
+        med_nouns = set(n.strip() for n in efcy_nouns.split(",") if n.strip())
+        overlap_nouns = user_nouns & med_nouns
+        if not overlap_nouns:
+            return 0
+        score = sum(idf_scores.get(noun, 0) for noun in overlap_nouns)
+        return min(score, 6)  # 점수 상한
 
     def warn_score(text):
         return 1 if not text.strip() else 0
