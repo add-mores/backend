@@ -1,59 +1,86 @@
 import pandas as pd
+import re
 import requests
-import os
-import concurrent.futures
-import logging
 import time
 import random
+import os
 from dotenv import load_dotenv
-from math import radians, sin, cos, sqrt, atan2
 from tqdm import tqdm
+import concurrent.futures
 
-# ─────────────── 설정 ───────────────
+# ───────────── 1. 설정 ─────────────
 load_dotenv()
 KAKAO_API_KEY = os.getenv("KAKAO_API_KEY")
 headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
-logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 
-# ─────────────── 위경도 변환 함수 ───────────────
-def get_lat_lon(address):
-    try:
-        time.sleep(random.uniform(0.1, 0.3))  # ✅ 0.1~0.3초 랜덤 딜레이
-        url = "https://dapi.kakao.com/v2/local/search/address.json"
-        params = {"query": address}
-        res = requests.get(url, headers=headers, params=params, timeout=5)
-        res.raise_for_status()
-        res_json = res.json()
-        if res_json["documents"]:
-            x = float(res_json["documents"][0]["x"])
-            y = float(res_json["documents"][0]["y"])
+# ───────────── 2. 주소 정제 함수 ─────────────
+def clean_address(addr):
+    if pd.isna(addr):
+        return ""
+    addr = str(addr)
+    addr = re.sub(r"\s*\([^)]*\)", "", addr)
+    if "," in addr:
+        addr = addr.split(",")[0].strip()
+    return addr.strip()
+
+# ───────────── 3. 카카오 API 요청 함수 ─────────────
+def get_lat_lon_retry(address, retry=3):
+    for _ in range(retry):
+        try:
+            time.sleep(random.uniform(0.1, 0.3))
+            url = "https://dapi.kakao.com/v2/local/search/address.json"
+            params = {"query": address, "analyze_type": "exact"}
+            res = requests.get(url, headers=headers, params=params, timeout=5)
+            if res.status_code != 200:
+                continue
+            documents = res.json().get("documents", [])
+            if not documents:
+                continue
+            x = float(documents[0]["x"])
+            y = float(documents[0]["y"])
             return y, x
-    except Exception as e:
-        logging.error(f"❌ 주소 변환 실패: {address} | {e}")
+        except:
+            continue
     return None, None
 
-# ─────────────── 거리 계산 함수 (옵션) ───────────────
-def haversine(lat1, lon1, lat2, lon2):
-    R = 6371
-    dlat = radians(lat2 - lat1)
-    dlon = radians(lon2 - lon1)
-    a = sin(dlat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2)**2
-    return R * 2 * atan2(sqrt(a), sqrt(1 - a))
-
-# ─────────────── CSV 읽기 및 병렬 처리 ───────────────
-df = pd.read_csv("../../pages/hospital_combined.csv")
-addresses = df["address"].tolist()
-
-def parallel_geocode(address_list, max_workers=20):
-    results = []
+# ───────────── 4. 병렬 처리 (순서 보장) ─────────────
+def parallel_geocode_ordered(address_list, max_workers=20):
+    results = [None] * len(address_list)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = [executor.submit(get_lat_lon, addr) for addr in address_list]
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
-            results.append(future.result())
+        future_to_index = {
+            executor.submit(get_lat_lon_retry, addr): idx
+            for idx, addr in enumerate(address_list)
+        }
+        for future in tqdm(concurrent.futures.as_completed(future_to_index), total=len(address_list), desc="📍 병렬 위경도 변환"):
+            idx = future_to_index[future]
+            try:
+                results[idx] = future.result()
+            except:
+                results[idx] = (None, None)
     return results
 
-# ─────────────── 실행 및 저장 ───────────────
-coords = parallel_geocode(addresses)
-df["lat"], df["lon"] = zip(*coords)
-df.dropna(subset=["lat", "lon"]).to_csv("../../pages/hospital_with_latlon.csv", index=False)
+# ───────────── 5. 메인 실행 ─────────────
+if __name__ == "__main__":
+    df = pd.read_csv("../../pages/hospital_combined.csv").dropna(subset=["address"]).copy()
+
+    df["cleaning"] = df["address"].apply(clean_address)
+    coords = parallel_geocode_ordered(df["cleaning"].tolist(), max_workers=20)
+    df["lat"], df["lon"] = zip(*coords)
+
+    # 🔎 6. 매칭 확인용 로그 5개 출력
+    print("\n📌 [주소 ↔ 위경도 매칭 확인]")
+    print(df[["address", "cleaning", "lat", "lon"]].head(5).to_string(index=False))
+
+    # 7. 성공/실패 분리
+    success_df = df[df["lat"].notna() & df["lon"].notna()].copy()
+    fail_df = df[df["lat"].isna() | df["lon"].isna()].copy()
+
+    # 8. 저장
+    fail_df.to_csv("missing_hospitals_failed.csv", index=False)
+    success_df.drop(columns=["cleaning"], inplace=True)
+    success_df.to_csv("missing_hospitals_success.csv", index=False)
+
+    # 9. 로그
+    print(f"\n✅ 변환 성공: {len(success_df)}건")
+    print(f"❌ 변환 실패: {len(fail_df)}건")
 

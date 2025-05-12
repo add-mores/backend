@@ -1,21 +1,22 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import folium
 from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
-from math import radians, sin, cos, sqrt, atan2
 import requests
+from math import radians, sin, cos, sqrt, atan2
 from dotenv import load_dotenv
 import os
 
-# ───────────────────── 설정 및 데이터 로딩 ─────────────────────
+# ─────────────── 설정 및 데이터 로딩 ───────────────
 load_dotenv()
 KAKAO_API_KEY = os.getenv("KAKAO_API_KEY")
 headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
 df = pd.read_csv("pages/hospital_with_latlon.csv")
 
-# ───────────────────── 유틸 함수 ─────────────────────
+# ─────────────── 유틸 함수 ───────────────
 def get_lat_lon(address):
     url = "https://dapi.kakao.com/v2/local/search/address.json"
     params = {"query": address}
@@ -27,12 +28,26 @@ def get_lat_lon(address):
         return y, x
     return None
 
-def haversine(lat1, lon1, lat2, lon2):
+def convert_wgs84_to_tm(lon, lat):
+    url = "https://dapi.kakao.com/v2/local/geo/transcoord.json"
+    params = {
+        "x": lon,
+        "y": lat,
+        "input_coord": "WGS84",
+        "output_coord": "TM"
+    }
+    res = requests.get(url, headers=headers, params=params)
+    if res.status_code == 200 and res.json()["documents"]:
+        tm = res.json()["documents"][0]
+        return tm["x"], tm["y"]
+    return None, None
+
+def vectorized_haversine(lat1, lon1, lat2s, lon2s):
     R = 6371
-    dlat = radians(lat2 - lat1)
-    dlon = radians(lon2 - lon1)
-    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
-    return R * 2 * atan2(sqrt(a), sqrt(1 - a))
+    dlat = np.radians(lat2s - lat1)
+    dlon = np.radians(lon2s - lon1)
+    a = np.sin(dlat/2)**2 + np.cos(np.radians(lat1)) * np.cos(np.radians(lat2s)) * np.sin(dlon/2)**2
+    return R * 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
 
 def match_exact_departments(treatment, selected_depts):
     if pd.isna(treatment):
@@ -40,14 +55,13 @@ def match_exact_departments(treatment, selected_depts):
     dept_list = [s.strip() for s in treatment.split(",")]
     return any(dept in dept_list for dept in selected_depts)
 
-# ───────────────────── 지도 및 병원 리스트 출력 ─────────────────────
+# ─────────────── 지도 및 병원 리스트 출력 ───────────────
 def show_map_and_list(radius, df_filtered):
     focused = st.session_state.get("focused_location", (37.5665, 126.9780))
     center_lat, center_lon = focused
 
-    df_filtered["distance"] = df_filtered.apply(
-        lambda row: haversine(center_lat, center_lon, row["lat"], row["lon"]), axis=1
-    )
+    df_filtered = df_filtered.dropna(subset=["lat", "lon"]).copy()
+    df_filtered["distance"] = vectorized_haversine(center_lat, center_lon, df_filtered["lat"].values, df_filtered["lon"].values)
     df_nearby = df_filtered[df_filtered["distance"] <= radius].sort_values("distance").reset_index(drop=True)
 
     m = folium.Map(location=focused, zoom_start=17)
@@ -91,7 +105,7 @@ def show_map_and_list(radius, df_filtered):
         for i, row in hospitals_to_show.iterrows():
             lat = row["lat"]
             lon = row["lon"]
-            kakao = f"https://map.kakao.com/link/map/{row['hospital_name']},{lat},{lon}"
+            tm_x, tm_y = convert_wgs84_to_tm(lon, lat)
 
             with st.container():
                 st.markdown(f"""
@@ -104,7 +118,8 @@ def show_map_and_list(radius, df_filtered):
                     </span>
                 """, unsafe_allow_html=True)
 
-                if st.button("📍 지도 열기", key=f"mapbtn_{i}"):
+                if tm_x and tm_y:
+                    kakao = f"https://map.kakao.com/?urlX={tm_x}&urlY={tm_y}"
                     st.markdown(f"""
                     <div style="margin-top:10px;">
                         <a href="{kakao}" target="_blank" style="text-decoration: none;">
@@ -122,7 +137,7 @@ def show_map_and_list(radius, df_filtered):
                 st.session_state["visible_count"] = visible + 3
                 st.rerun()
 
-# ───────────────────── 주소 입력 처리 ─────────────────────
+# ─────────────── 주소 입력 처리 ───────────────
 def render_address_input(df_filtered, radius):
     address = st.text_input("도로명 주소 입력", "서울특별시 광진구 능동로 120")
     if address:
@@ -133,7 +148,7 @@ def render_address_input(df_filtered, radius):
         else:
             st.warning("❌ 주소를 찾을 수 없습니다.")
 
-# ───────────────────── GPS 처리 ─────────────────────
+# ─────────────── GPS 처리 ───────────────
 def render_gps_location(df_filtered, radius):
     if "gps_location" not in st.session_state:
         with st.spinner("📡 위치 정보를 가져오는 중입니다..."):
@@ -147,11 +162,13 @@ def render_gps_location(df_filtered, radius):
         lon = coords.get("longitude")
         acc = coords.get("accuracy", 9999)
 
+        st.info(f"📍 현재 위치 정확도: ±{int(acc)}m")
+
         if acc <= 100:
             st.session_state["focused_location"] = (lat, lon)
             show_map_and_list(radius, df_filtered)
         else:
-            st.warning("⚠️ 정확도가 낮습니다. 주소 입력을 권장합니다.")
+            st.warning(f"⚠️ 현재 위치 정확도가 낮습니다. (±{int(acc)}m)")
             if st.button("📍 주소 입력으로 전환"):
                 st.session_state["location_method"] = "주소 입력"
                 st.rerun()
@@ -162,9 +179,9 @@ def render_gps_location(df_filtered, radius):
         st.session_state["gps_location"] = get_geolocation()
         st.rerun()
 
-# ───────────────────── 메인 실행 ─────────────────────
+# ─────────────── 메인 실행 ───────────────
 st.set_page_config(page_title="병원 위치 시각화", layout="wide")
-st.title("🏥 병원 위치 시각화 서비스")  # 왼쪽 정렬
+st.title("🏥 병원 위치 시각화 서비스")
 
 if "location_method" not in st.session_state:
     st.session_state["location_method"] = "현재 위치(GPS)"
@@ -197,4 +214,3 @@ if st.session_state["location_method"] == "현재 위치(GPS)":
     render_gps_location(df_filtered, radius)
 else:
     render_address_input(df_filtered, radius)
-
