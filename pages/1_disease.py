@@ -8,13 +8,15 @@ from dotenv import load_dotenv
 
 st.set_page_config(page_title="질병 정보", layout="wide")
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, current_dir)
+# code/streamlit 디렉토리 경로를 Python 경로에 추가
+utils_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'code', 'streamlit')
+sys.path.insert(0, utils_dir)
 
-# pages 디렉토리의 _utils.py에서 import
+# 이제 _utils.py를 직접 import 가능
 from _utils import (
     process_tokens, calculate_tfidf_weights, calculate_tfidf_similarity, apply_symptom_bonus
 )
+
 # 환경 변수 로드
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
