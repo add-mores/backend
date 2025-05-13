@@ -95,7 +95,7 @@ with col3:
         """
         <a href='/medicine' target='_self' style='text-decoration: none;'>
             <div class='card'>
-                <h3>💊 약 추천</h3>
+                <h3>💊 의약품 추천</h3>
                 <p>질병/증상에 맞는 의약품 정보를 제공합니다.</p>
             </div>
         </a>
