@@ -6,15 +6,30 @@ from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
 import requests
+import psycopg2
 from math import radians, sin, cos, sqrt, atan2
 from dotenv import load_dotenv
 import os
 
-# ─────────────── 설정 및 데이터 로딩 ───────────────
+# ─────────────── 설정 ───────────────
 load_dotenv()
 KAKAO_API_KEY = os.getenv("KAKAO_API_KEY")
+DATABASE_URL = os.getenv("DATABASE_URL")
 headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
-df = pd.read_csv("pages/hospitals_success.csv")
+
+# ─────────────── DB 연결 및 병원 데이터 로딩 ───────────────
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL)
+
+def load_hospital_data():
+    conn = get_db_connection()
+    query = """
+        SELECT hospital_name, hospital_type, province, city, address, treatment, lat, lon
+        FROM testhosp
+    """
+    df = pd.read_sql(query, conn)
+    conn.close()
+    return df
 
 # ─────────────── 유틸 함수 ───────────────
 def get_lat_lon(address):
@@ -27,7 +42,7 @@ def get_lat_lon(address):
     return None
 
 def vectorized_haversine(lat1, lon1, lat2s, lon2s):
-    R = 6371  # 지구 반지름(km)
+    R = 6371
     dlat = np.radians(lat2s - lat1)
     dlon = np.radians(lon2s - lon1)
     a = np.sin(dlat/2)**2 + np.cos(np.radians(lat1)) * np.cos(np.radians(lat2s)) * np.sin(dlon/2)**2
@@ -41,12 +56,10 @@ def match_exact_departments(treatment, selected_depts):
 # ─────────────── 지도 및 병원 목록 출력 ───────────────
 def show_map_and_list(radius, df_filtered):
     center_lat, center_lon = st.session_state.get("focused_location", (37.5665, 126.9780))
-
     df2 = df_filtered.dropna(subset=["lat","lon"]).copy()
     df2["distance"] = vectorized_haversine(center_lat, center_lon, df2["lat"].values, df2["lon"].values)
     nearby = df2[df2["distance"] <= radius].sort_values("distance").reset_index(drop=True)
 
-    # Folium 지도
     m = folium.Map(location=(center_lat, center_lon), zoom_start=16)
     cluster = MarkerCluster().add_to(m)
     folium.Marker(
@@ -66,7 +79,6 @@ def show_map_and_list(radius, df_filtered):
             icon=folium.Icon(color="blue")
         ).add_to(cluster)
 
-    # Streamlit 레이아웃
     map_col, list_col = st.columns([3,2])
     with map_col:
         st_folium(m, width=700, height=450)
@@ -75,8 +87,7 @@ def show_map_and_list(radius, df_filtered):
         if nearby.empty:
             st.info("❌ 조건에 맞는 병원이 없습니다.")
             return
-
-        visible = st.session_state.get("visible_count",3)
+        visible = st.session_state.get("visible_count", 3)
         for row in nearby.iloc[:visible].itertuples():
             lat, lon = row.lat, row.lon
             st.markdown(f"""
@@ -88,21 +99,18 @@ def show_map_and_list(radius, df_filtered):
     거리: {row.distance:.2f} km
   </span>
   <div style="display:flex;gap:6px;margin-top:8px;">
-    <!-- 카카오맵 버튼 -->
     <a href="https://map.kakao.com/link/map/{lat},{lon}" target="_blank" style="text-decoration:none;">
       <button style="display:flex;align-items:center;background:#FFEB00;color:black;border:none;padding:6px 12px;border-radius:5px;">
         <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/kakaotalk.svg"
              alt="카카오맵" style="width:16px;height:16px;margin-right:4px;"/>카카오맵
       </button>
     </a>
-    <!-- 네이버지도 버튼 -->
     <a href="https://map.naver.com/v5/search/{lat},{lon}" target="_blank" style="text-decoration:none;">
       <button style="display:flex;align-items:center;background:#03C75A;color:white;border:none;padding:6px 12px;border-radius:5px;">
         <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/naver.svg"
              alt="네이버지도" style="width:16px;height:16px;margin-right:4px;"/>네이버지도
       </button>
     </a>
-    <!-- 구글지도 버튼 -->
     <a href="https://www.google.com/maps/search/?api=1&query={lat},{lon}" target="_blank" style="text-decoration:none;">
       <button style="display:flex;align-items:center;background:#4285F4;color:white;border:none;padding:6px 12px;border-radius:5px;">
         <img src="https://cdn.jsdelivr.net/npm/simple-icons@v9/icons/google.svg"
@@ -112,7 +120,6 @@ def show_map_and_list(radius, df_filtered):
   </div>
 </div>
 """, unsafe_allow_html=True)
-
         if visible < len(nearby) and st.button("📄 병원 더보기"):
             st.session_state["visible_count"] = visible + 3
             st.rerun()
@@ -162,6 +169,8 @@ if "location_method" not in st.session_state:
     st.session_state["location_method"] = "현재 위치(GPS)"
 if "visible_count" not in st.session_state:
     st.session_state["visible_count"] = 3
+
+df = load_hospital_data()
 
 method = st.radio(
     "위치 입력 방식",
