@@ -166,3 +166,6 @@ pages/*.csv
 
 #.DS_Store
 .DS_Store
+
+# ipynb
+notebook/*.ipynb
