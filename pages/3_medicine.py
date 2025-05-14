@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from konlpy.tag import Okt
 import math
 from collections import Counter
+from sqlalchemy import create_engine
 
 # 환경 변수 로드
 load_dotenv()
@@ -21,32 +22,22 @@ def extract_nouns(text):
     return [n for n in okt.nouns(text) if len(n) > 1]
 
 # DB 연결 함수
-def get_db_connection():
-    DATABASE_URL = os.getenv("DATABASE_URL")
-    if not DATABASE_URL:
-        st.error("DATABASE_URL 환경 변수가 설정되지 않았습니다.")
+def get_engine():
+    # 환경변수에서 DB 주소 가져오기
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        st.error("DATABASE_URL 환경 변수가 없어요!")
         return None
-    try:
-        return psycopg2.connect(DATABASE_URL)
-    except Exception as e:
-        st.error(f"데이터베이스 연결 오류: {e}")
-        return None
+    return create_engine(db_url)
 
-# DB에서 데이터 불러오기
+# 데이터 불러오기 함수
 @st.cache_data
 def load_data():
-    conn = get_db_connection()
-    if conn is None:
+    engine = get_engine()
+    if engine is None:
         return pd.DataFrame()
-    try:
-        query = "SELECT * FROM testmed"
-        df = pd.read_sql(query, conn)
-        return df.fillna("")
-    except Exception as e:
-        st.error(f"데이터 조회 오류: {e}")
-        return pd.DataFrame()
-    finally:
-        conn.close()
+    query = "SELECT * FROM testmed"
+    return pd.read_sql(query, engine)
 
 # efcy_nouns 컬럼에서 IDF 점수 계산
 def compute_idf_scores(df):
