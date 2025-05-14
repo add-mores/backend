@@ -5,7 +5,7 @@
 groups = ["default", "streamlit"]
 strategy = ["inherit_metadata"]
 lock_version = "4.5.0"
-content_hash = "sha256:d38b98b1463d18a70c921f684e80642fbf64b1caaad4dfcfb08f52c26024c1e5"
+content_hash = "sha256:a484ec3d0beb7fdeb559cfcc3dd3e9f7419d4caf89e4a7ae2770b46a1e5c698b"
 
 [[metadata.targets]]
 requires_python = ">=3.12"
