@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import folium
+from sqlalchemy import create_engine
 from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 from streamlit_js_eval import get_geolocation
@@ -18,17 +19,14 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
 
 # ─────────────── DB 연결 및 병원 데이터 로딩 ───────────────
-def get_db_connection():
-    return psycopg2.connect(DATABASE_URL)
 
 def load_hospital_data():
-    conn = get_db_connection()
+    engine = create_engine(DATABASE_URL)
     query = """
         SELECT hos_nm, hos_type, pv, city, add, deps, lat, lon
         FROM testhosp
     """
-    df = pd.read_sql(query, conn)
-    conn.close()
+    df = pd.read_sql(query, engine)
     return df
 
 # ─────────────── 유틸 함수 ───────────────

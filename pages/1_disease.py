@@ -22,7 +22,7 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # 제목과 설명
-st.title("🏥 질병 정보 검색 (TF-IDF 적용)")
+st.title("🏥 질병 정보 검색")
 st.markdown("증상이나 질병명을 입력하여 관련 질병 정보를 찾아보세요.")
 
 # CSS 스타일 추가 (다크 모드 호환성 개선)
@@ -139,7 +139,7 @@ if search_button or user_input:
                     disease_tokens = process_tokens(tokens)
                     
                     # 유사도 계산 (기존 방식)
-                    from utils import calculate_similarity
+                    from _utils import calculate_similarity
                     score = calculate_similarity(user_tokens, disease_tokens, symptoms)
                     
                     # 질병명에 키워드가 직접 포함되면 가중치 추가
