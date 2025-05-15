@@ -101,7 +101,7 @@ if search_button or user_input:
             
             # 모든 질병 데이터 가져오기
             cursor.execute("""
-                SELECT disnm_ko, disnm_en, dep, definition, symptoms, tokens
+                SELECT disnm_ko, disnm_en, dep, defintion, symptoms, tokens
                 FROM testdis
             """)
             
@@ -133,7 +133,7 @@ if search_button or user_input:
                 disease_scores = []
                 
                 for disease in all_diseases:
-                    disnm_ko, disnm_en, dep, definition, symptoms, tokens = disease
+                    disnm_ko, disnm_en, dep, defintion, symptoms, tokens = disease
                     
                     # 토큰 처리
                     disease_tokens = process_tokens(tokens)
@@ -168,7 +168,7 @@ if search_button or user_input:
                 st.markdown("### 관련 질병")
                 
                 for i, (disease, score) in enumerate(top_results):
-                    disnm_ko, disnm_en, dep, definition, symptoms, tokens = disease
+                    disnm_ko, disnm_en, dep, defintion, symptoms, tokens = disease
                     disease_tokens = process_tokens(tokens)
                     
                     # 상위 토큰과 가중치 (TF-IDF 방식인 경우)
@@ -188,7 +188,7 @@ if search_button or user_input:
                         
                         # 정의
                         st.markdown("<p class='category-label'>📝 정의</p>", unsafe_allow_html=True)
-                        st.markdown(f"<div class='content-box'>{definition if definition else '정보 없음'}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='content-box'>{defintion if defintion else '정보 없음'}</div>", unsafe_allow_html=True)
                         
                         # 증상
                         st.markdown("<p class='category-label'>🔍 주요 증상</p>", unsafe_allow_html=True)
