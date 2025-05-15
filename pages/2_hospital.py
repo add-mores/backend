@@ -24,7 +24,7 @@ def get_db_connection():
 def load_hospital_data():
     conn = get_db_connection()
     query = """
-        SELECT hospital_name, hospital_type, province, city, address, treatment, lat, lon
+        SELECT hos_nm, hos_type, pv, city, add, deps, lat, lon
         FROM testhosp
     """
     df = pd.read_sql(query, conn)
@@ -92,10 +92,10 @@ def show_map_and_list(radius, df_filtered):
             lat, lon = row.lat, row.lon
             st.markdown(f"""
 <div style="background:white;padding:12px;border-radius:8px;margin-bottom:8px;">
-  <strong style="color:black;font-size:16px;">{row.hospital_name}</strong><br>
+  <strong style="color:black;font-size:16px;">{row.hos_nm}</strong><br>
   <span style="font-size:13px;color:#333;">
-    주소: {row.address}<br>
-    진료과: {row.treatment}<br>
+    주소: {row.add}<br>
+    진료과: {row.deps}<br>
     거리: {row.distance:.2f} km
   </span>
   <div style="display:flex;gap:6px;margin-top:8px;">
@@ -186,16 +186,16 @@ col1, col2, col3 = st.columns(3)
 with col1:
     radius = st.slider("📏 반경 (km)", 0.1, 5.0, 1.0, 0.1)
 with col2:
-    depts = sorted({d.strip() for t in df["treatment"].dropna() for d in t.split(",")})
+    depts = sorted({d.strip() for t in df["deps"].dropna() for d in t.split(",")})
     selected_depts = st.multiselect("진료과 필터", depts)
 with col3:
     search_name = st.text_input("🔍 병원명 필터")
 
 filtered = df.copy()
 if selected_depts:
-    filtered = filtered[filtered["treatment"].apply(lambda t: match_exact_departments(t, selected_depts))]
+    filtered = filtered[filtered["deps"].apply(lambda t: match_exact_departments(t, selected_depts))]
 if search_name:
-    filtered = filtered[filtered["hospital_name"].str.contains(search_name, case=False, na=False)]
+    filtered = filtered[filtered["hos_nm"].str.contains(search_name, case=False, na=False)]
 
 if st.session_state["location_method"] == "현재 위치(GPS)":
     render_gps_location(filtered, radius)

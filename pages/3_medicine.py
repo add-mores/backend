@@ -53,7 +53,7 @@ def compute_idf_scores(df):
     doc_count = len(df)
     noun_doc_freq = Counter()
 
-    for entry in df['efcy_nouns'].dropna():
+    for entry in df['ph_effect_c'].dropna():
         nouns = set(n.strip() for n in entry.split(',') if n.strip())
         for noun in nouns:
             noun_doc_freq[noun] += 1
@@ -73,8 +73,8 @@ def recommend_with_weights(user_input, df, age_group=None, is_pregnant=False, ha
 
     if user_noun_count == 0:
         return pd.DataFrame(columns=[
-            'itemname_clean', 'entpname', 'efcyqesitm',
-            'atpnqesitm', 'atpnwarnqesitm', 'seqesitm', 'total_score'
+            'ph_nm_c', 'ph_c_nm', 'ph_effect',
+            'ph_anti_warn', 'ph_warn', 'ph_s_effect', 'total_score'
         ])
 
     df = df.fillna("")
@@ -83,7 +83,7 @@ def recommend_with_weights(user_input, df, age_group=None, is_pregnant=False, ha
 
     # 사용자 조건 필터링 함수
     def exclude_by_user_conditions(row):
-        full_text = f"{row['efcyqesitm']} {row['atpnqesitm']} {row['atpnwarnqesitm']}"
+        full_text = f"{row['ph_effect']} {row['ph_anti_warn']} {row['ph_warn']}"
 
         # 연령 필터
         if age_group:
@@ -134,10 +134,10 @@ def recommend_with_weights(user_input, df, age_group=None, is_pregnant=False, ha
         return max(0, 1 - (length / (avg_len * 2)))
 
     # 점수 적용
-    df['symptom_score'] = df['efcy_nouns'].apply(symptom_score)
-    df['warn_score'] = df['atpnwarnqesitm'].apply(warn_score)
-    df['caution_score'] = df['atpnqesitm'].apply(caution_score)
-    df['side_effect_score'] = df['seqesitm'].apply(side_effect_score)
+    df['symptom_score'] = df['ph_effect_c'].apply(symptom_score)
+    df['warn_score'] = df['ph_warn'].apply(warn_score)
+    df['caution_score'] = df['ph_anti_warn'].apply(caution_score)
+    df['side_effect_score'] = df['ph_s_effect'].apply(side_effect_score)
 
     df['total_score'] = (
         df['symptom_score'] +
@@ -149,8 +149,8 @@ def recommend_with_weights(user_input, df, age_group=None, is_pregnant=False, ha
     result = df[df['symptom_score'] > 0].sort_values(by='total_score', ascending=False).head(top_n)
 
     return result[[  # 최종 출력 열
-        'itemname_clean', 'entpname', 'efcyqesitm',
-        'atpnqesitm', 'atpnwarnqesitm', 'seqesitm', 'total_score'
+        'ph_nm_c', 'ph_c_nm', 'ph_effect',
+        'ph_anti_warn', 'ph_warn', 'ph_s_effect', 'total_score'
     ]]
 
 # ------------------------- Streamlit UI -------------------------
@@ -191,14 +191,14 @@ if st.button("🔍 의약품 검색") and user_input:
         st.subheader("📋 추천 의약품 목록")
         for _, row in result.iterrows():
             with st.container():
-                st.markdown(f"### {row['itemname_clean']} ({row['entpname']})")
-                st.markdown(f"**✔️ 주요 효능:** {row['efcyqesitm'][:100]}{'...' if len(row['efcyqesitm']) > 100 else ''}")
+                st.markdown(f"### {row['ph_nm_c']} ({row['ph_c_nm']})")
+                st.markdown(f"**✔️ 주요 효능:** {row['ph_effect'][:100]}{'...' if len(row['ph_effect']) > 100 else ''}")
                 st.markdown(f"**🔗 관련도:** `{row['total_score']}`")
                 with st.expander("🔍 상세 보기"):
-                    st.markdown(f"**📌 전체 효능 설명**\n\n{row['efcyqesitm']}")
-                    st.markdown(f"**⚠️ 주의사항**\n\n{row['atpnqesitm'] or '정보 없음'}")
-                    st.markdown(f"**⚠️ 주의사항 경고**\n\n{row['atpnwarnqesitm'] or '정보 없음'}")
-                    st.markdown(f"**🚫 부작용**\n\n{row['seqesitm'] or '정보 없음'}")
+                    st.markdown(f"**📌 전체 효능 설명**\n\n{row['ph_effect']}")
+                    st.markdown(f"**⚠️ 주의사항**\n\n{row['ph_anti_warn'] or '정보 없음'}")
+                    st.markdown(f"**⚠️ 주의사항 경고**\n\n{row['ph_warn'] or '정보 없음'}")
+                    st.markdown(f"**🚫 부작용**\n\n{row['ph_s_effect'] or '정보 없음'}")
                 st.markdown("---")
     else:
         st.warning("😥 관련된 의약품을 찾을 수 없습니다. 조건을 변경하거나 다른 증상을 입력해보세요.")
