@@ -68,10 +68,10 @@ def show_map_and_list(radius, df_filtered):
     for row in nearby.itertuples():
         folium.Marker(
             location=(row.lat, row.lon),
-            tooltip=row.hospital_name,
+            tooltip=row.hos_nm,
             popup=folium.Popup(
-                f"<strong style='color:black'>{row.hospital_name}</strong><br>"
-                f"<span style='color:black'>{row.address}<br>{row.treatment}</span>",
+                f"<strong style='color:black'>{row.hos_nm}</strong><br>"
+                f"<span style='color:black'>{row.add}<br>{row.deps}</span>",
                 max_width=250
             ),
             icon=folium.Icon(color="blue")
