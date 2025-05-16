@@ -169,3 +169,7 @@ pages/*.csv
 
 # ipynb
 notebook/*.ipynb
+
+#docker
+Dockerfile
+.dockerignore
