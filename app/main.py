@@ -10,7 +10,7 @@ from datetime import datetime
 from app.api import symptoms     # 입력 API (api/insert)
 from app.api import diseases     # 질병 API (api/disease)
 from app.api import medications  # 의약품 API (api/medicine)
-from app.api import hospitals    # 병원 API (api/hospital)
+from app.api import hospital_api    # 병원 API (api/hospital)
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
