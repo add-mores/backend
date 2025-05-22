@@ -1,14 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
-import os
 import re
-import json
-import urllib3
 from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI()
+router = APIRouter()
 
 # Input 데이터 모델
 class TextInput(BaseModel):
@@ -61,23 +58,13 @@ def classify_clauses(clauses):
     return positive, negative
 
 
-# FastAPI 라우트
-@app.post("/api/insert")
-def insert_text(data: TextInput):
+@router.post("/api/insert")
+def process_input(data: TextInput):
     text = data.text
     clauses = split_sentences_by_conj_endings(text)
     pos_clauses, neg_clauses = classify_clauses(clauses)
-
-    result = {
+    return {
         "original_text": text,
         "positive": pos_clauses,
         "negative": neg_clauses
     }
-
-    return result
-
-
-# 루트 엔드포인트
-@app.get("/api/")
-def root():
-    return {"message": "질병 추천을 위한 입력 API 입니다다."}
