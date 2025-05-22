@@ -5,12 +5,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from datetime import datetime
+from dotenv import load_dotenv
 
 # 각 API 라우터 import
-from app.api import insert_api     # 입력 API (api/insert)
-from app.api import disease_api     # 질병 API (api/disease)
-from app.api import medicine_api  # 의약품 API (api/medicine)
+# from app.api import insert_api     # 입력 API (api/insert)
+# from app.api import disease_api     # 질병 API (api/disease)
+# from app.api import medicine_api  # 의약품 API (api/medicine)
 from app.api import hospital_api    # 병원 API (api/hospital)
+
+load_dotenv()
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -38,24 +41,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 각 API 라우터 등록
-app.include_router(
-    insert_api.router, 
-    tags=["증상 처리"],
-    prefix="",  # /api/insert 그대로 사용
-)
+# # 각 API 라우터 등록
+# app.include_router(
+#     insert_api.router, 
+#     tags=["증상 처리"],
+#     prefix="",  # /api/insert 그대로 사용
+# )
 
-app.include_router(
-    disease_api.router, 
-    tags=["질병 추천"],
-    prefix="",  # /api/disease 그대로 사용
-)
+# app.include_router(
+#     disease_api.router, 
+#     tags=["질병 추천"],
+#     prefix="",  # /api/disease 그대로 사용
+# )
 
-app.include_router(
-    medicine_api.router, 
-    tags=["의약품 추천"],
-    prefix="",  # /api/medicine 그대로 사용
-)
+# app.include_router(
+#     medicine_api.router, 
+#     tags=["의약품 추천"],
+#     prefix="",  # /api/medicine 그대로 사용
+# )
 
 app.include_router(
     hospital_api.router, 
@@ -141,9 +144,9 @@ async def startup_event():
     logger.info("🚀 증상 기반 질병 및 의약품 추천 시스템 API 서버가 시작되었습니다.")
     logger.info("📖 API 문서: http://localhost:8000/docs")
     logger.info("🔗 엔드포인트:")
-    logger.info("   - 증상 처리: POST /api/insert")
-    logger.info("   - 질병 추천: POST /api/disease")
-    logger.info("   - 의약품 추천: POST /api/medicine")
+    # logger.info("   - 증상 처리: POST /api/insert")
+    # logger.info("   - 질병 추천: POST /api/disease")
+    # logger.info("   - 의약품 추천: POST /api/medicine")
     logger.info("   - 병원 추천: POST /api/hospital")
 
 # 애플리케이션 종료 이벤트  
