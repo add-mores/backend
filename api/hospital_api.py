@@ -39,7 +39,7 @@ class FilterRequest(BaseModel):
     deps: Optional[List[str]] = None
     search_name: Optional[str] = None
 
-@app.post("/filter_hospitals")
+@app.post("/api/filter_hospitals")
 def filter_hospitals(req: FilterRequest):
     query = """
     SELECT hos_nm, hos_type, pv, city, add, deps, lat, lon
