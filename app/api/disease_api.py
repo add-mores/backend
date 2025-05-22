@@ -599,13 +599,25 @@ async def recommend_diseases(
         
         # 6. 질병 벡터와 유사도 계산
         disease_vectors = load_disease_vectors(db, limit=100)
-        
+
         recommendations = []
-        for disease in disease_vectors:
+        for i, disease in enumerate(disease_vectors):
             # 긍정 유사도
             pos_similarity = 0.0
             if positive_vector is not None:
-                pos_similarity = float(np.dot(positive_vector, disease['vector']))
+                pos_similarity = abs(float(np.dot(positive_vector, disease['vector'])))  # abs() 추가
+                
+                # 디버깅: 편두통 질병만 상세 로그
+                if '편두통' in disease['disease_name_ko']:
+                    logger.info(f"🔍 편두통 디버깅:")
+                    logger.info(f"  질병명: {disease['disease_name_ko']}")
+                    logger.info(f"  사용자 벡터 shape: {positive_vector.shape}")
+                    logger.info(f"  질병 벡터 shape: {disease['vector'].shape}")
+                    logger.info(f"  사용자 벡터 nonzero: {np.count_nonzero(positive_vector)}")
+                    logger.info(f"  질병 벡터 nonzero: {np.count_nonzero(disease['vector'])}")
+                    logger.info(f"  내적 결과: {pos_similarity}")
+                    logger.info(f"  사용자 벡터 norm: {np.linalg.norm(positive_vector)}")
+                    logger.info(f"  질병 벡터 norm: {np.linalg.norm(disease['vector'])}")
             
             # 부정 유사도
             neg_similarity = 0.0
