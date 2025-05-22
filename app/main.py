@@ -8,9 +8,9 @@ from datetime import datetime
 
 # 각 API 라우터 import
 from app.api import insert_api     # 입력 API (api/insert)
-from app.api import diseases     # 질병 API (api/disease)
-from app.api import medications  # 의약품 API (api/medicine)
-from app.api import hospitals    # 병원 API (api/hospital)
+from app.api import disease_api     # 질병 API (api/disease)
+from app.api import medicine_api  # 의약품 API (api/medicine)
+from app.api import hospital_api    # 병원 API (api/hospital)
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -46,19 +46,19 @@ app.include_router(
 )
 
 app.include_router(
-    diseases.router, 
+    disease_api.router, 
     tags=["질병 추천"],
     prefix="",  # /api/disease 그대로 사용
 )
 
 app.include_router(
-    medications.router, 
+    medicine_api.router, 
     tags=["의약품 추천"],
     prefix="",  # /api/medicine 그대로 사용
 )
 
 app.include_router(
-    hospitals.router, 
+    hospital_api.router, 
     tags=["병원 추천"],
     prefix="",  # /api/hospital 그대로 사용
 )
