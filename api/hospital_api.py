@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import APIRouter, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -10,15 +10,7 @@ import requests
 from dotenv import load_dotenv
 
 load_dotenv()
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 실제 배포 시엔 ["https://addmore.kr"] 권장
-    allow_credentials=True,
-    allow_methods=["*"],  # ← 이거 없으면 405 무조건 뜸
-    allow_headers=["*"],  # ← 이것도 거의 항상 필요
-)
+router = APIRouter()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 KAKAO_API_KEY = os.getenv("KAKAO_API_KEY")
@@ -39,7 +31,7 @@ class FilterRequest(BaseModel):
     deps: Optional[List[str]] = None
     search_name: Optional[str] = None
 
-@app.post("/api/filter_hospitals")
+@router.post("/api/hospital")
 def filter_hospitals(req: FilterRequest):
     query = """
     SELECT hos_nm, hos_type, pv, city, add, deps, lat, lon
@@ -66,7 +58,7 @@ def filter_hospitals(req: FilterRequest):
         })
     return records
 
-@app.get("/list_departments")
+@router.get("/list_departments")
 def list_departments():
     df = pd.read_sql("SELECT deps FROM testhosp", engine)
 
@@ -77,7 +69,7 @@ def list_departments():
 
     return sorted(all_depts)
 
-@app.get("/geocode")
+@router.get("/geocode")
 def geocode_address(query: str = Query(...)):
     url = "https://dapi.kakao.com/v2/local/search/address.json"
     try:
