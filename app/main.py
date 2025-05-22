@@ -7,10 +7,10 @@ import logging
 from datetime import datetime
 
 # 각 API 라우터 import
-from app.api import symptoms     # 입력 API (api/insert)
-from app.api import diseases     # 질병 API (api/disease)
-from app.api import medications  # 의약품 API (api/medicine)
-from app.api import hospitals    # 병원 API (api/hospital)
+from app.api import insert_api     # 입력 API (api/insert)
+# from app.api import diseases     # 질병 API (api/disease)
+# from app.api import medications  # 의약품 API (api/medicine)
+# from app.api import hospitals    # 병원 API (api/hospital)
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -40,28 +40,28 @@ app.add_middleware(
 
 # 각 API 라우터 등록
 app.include_router(
-    symptoms.router, 
+    insert_api.router, 
     tags=["증상 처리"],
     prefix="",  # /api/insert 그대로 사용
 )
 
-app.include_router(
-    diseases.router, 
-    tags=["질병 추천"],
-    prefix="",  # /api/disease 그대로 사용
-)
+# app.include_router(
+#     diseases.router, 
+#     tags=["질병 추천"],
+#     prefix="",  # /api/disease 그대로 사용
+# )
 
-app.include_router(
-    medications.router, 
-    tags=["의약품 추천"],
-    prefix="",  # /api/medicine 그대로 사용
-)
+# app.include_router(
+#     medications.router, 
+#     tags=["의약품 추천"],
+#     prefix="",  # /api/medicine 그대로 사용
+# )
 
-app.include_router(
-    hospitals.router, 
-    tags=["병원 추천"],
-    prefix="",  # /api/hospital 그대로 사용
-)
+# app.include_router(
+#     hospitals.router, 
+#     tags=["병원 추천"],
+#     prefix="",  # /api/hospital 그대로 사용
+# )
 
 # 루트 엔드포인트
 @app.get("/")
