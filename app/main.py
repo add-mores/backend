@@ -3,6 +3,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import logging
 from datetime import datetime
 from dotenv import load_dotenv
@@ -37,7 +38,7 @@ app.add_middleware(
         "http://localhost:3001",    # 예비 포트
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE","OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -148,6 +149,8 @@ async def startup_event():
     # logger.info("   - 질병 추천: POST /api/disease")
     # logger.info("   - 의약품 추천: POST /api/medicine")
     logger.info("   - 병원 추천: POST /api/hospital")
+from fastapi.responses import JSONResponse
+from datetime import datetime
 
 # 애플리케이션 종료 이벤트  
 @app.on_event("shutdown")
@@ -160,21 +163,28 @@ async def shutdown_event():
 async def internal_server_error_handler(request, exc):
     """서버 내부 오류 처리"""
     logger.error(f"Internal server error: {exc}")
-    return {
-        "error": "Internal Server Error",
-        "message": "서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
-        "timestamp": datetime.now().isoformat()
-    }
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal Server Error",
+            "message": "서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+            "timestamp": datetime.now().isoformat()
+        }
+    )
 
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
     """404 에러 처리"""
-    return {
-        "error": "Not Found", 
-        "message": f"요청한 경로 '{request.url.path}'를 찾을 수 없습니다.",
-        "available_endpoints": ["/api/insert", "/api/disease", "/api/medicine", "/api/hospital"],
-        "timestamp": datetime.now().isoformat()
-    }
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": "Not Found",
+            "message": f"요청한 경로 '{request.url.path}'를 찾을 수 없습니다.",
+            "available_endpoints": ["/api/insert", "/api/disease", "/api/medicine", "/api/hospital"],
+            "timestamp": datetime.now().isoformat()
+        }
+    )
+
 
 # 개발용 정보 (배포 시 제거)
 if __name__ == "__main__":
